@@ -1,0 +1,10 @@
+{
+  "name": "github-explainer-scripts",
+  "version": "1.0.0",
+  "description": "Scripts for github-explainer skill",
+  "main": "fetch-repo.js",
+  "scripts": {
+    "fetch": "node fetch-repo.js"
+  },
+  "dependencies": {}
+}

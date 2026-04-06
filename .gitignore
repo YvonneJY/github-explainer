@@ -1,0 +1,17 @@
+# Generated reports
+*.html
+
+# Output directory
+output/
+
+# Data files
+*.json
+!package.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
