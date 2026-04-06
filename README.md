@@ -14,9 +14,17 @@
 6. **快速上手** - 安装、配置、运行命令
 7. **使用指南** - 面向不同用户角色的教程
 
+## 安装
+
+将仓库克隆到 Claude Code 的 skills 目录：
+
+```bash
+git clone https://github.com/YvonneJY/github-explainer.git ~/.claude/skills/github-explainer
+```
+
 ## 使用方法
 
-在Claude Code中，直接输入GitHub仓库URL：
+在 Claude Code 中，直接输入 GitHub 仓库 URL：
 
 ```
 解释一下 https://github.com/facebook/react
