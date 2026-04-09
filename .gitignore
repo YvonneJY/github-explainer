@@ -1,5 +1,6 @@
 # Generated reports
 *.html
+!examples/*.html
 
 # Output directory
 output/

@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>frontend-slides - 项目解读</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f5f5f5;
+      color: #333;
+    }
+
+    /* ========== 动画效果 ========== */
+
+    /* 悬停发光效果 */
+    .file-card:hover, .module-card:hover, .feature-card:hover, .takeaway-card:hover {
+      box-shadow: 0 0 25px rgba(102, 126, 234, 0.4);
+      transform: translateY(-3px);
+      transition: all 0.3s ease;
+    }
+
+    /* 渐入动画 */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    section {
+      animation: fadeInUp 0.6s ease-out;
+      opacity: 0;
+      animation-fill-mode: forwards;
+    }
+    section:nth-child(1) { animation-delay: 0.1s; }
+    section:nth-child(2) { animation-delay: 0.15s; }
+    section:nth-child(3) { animation-delay: 0.2s; }
+    section:nth-child(4) { animation-delay: 0.25s; }
+    section:nth-child(5) { animation-delay: 0.3s; }
+    section:nth-child(6) { animation-delay: 0.35s; }
+    section:nth-child(7) { animation-delay: 0.4s; }
+    section:nth-child(8) { animation-delay: 0.45s; }
+    section:nth-child(9) { animation-delay: 0.5s; }
+
+    /* 章节标题装饰 */
+    h2 {
+      position: relative;
+      padding-bottom: 12px;
+      margin-bottom: 20px;
+    }
+    h2::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 60px;
+      height: 3px;
+      background: linear-gradient(90deg, #667eea, #764ba2);
+      border-radius: 2px;
+    }
+
+    /* 目录树 */
+    .tree {
+      background: #1e1e1e;
+      color: #98c379;
+      padding: 20px 24px;
+      border-radius: 10px;
+      overflow-x: auto;
+      font-family: 'Fira Code', 'Consolas', monospace;
+      font-size: 0.88em;
+      line-height: 1.8;
+    }
+    .tree .dir, .tree .file {
+      padding: 2px 6px;
+      border-radius: 4px;
+      transition: background 0.2s;
+    }
+    .tree .dir:hover, .tree .file:hover {
+      background: rgba(102, 126, 234, 0.15);
+    }
+
+    /* 代码块（完整展示，不滚动） */
+    .code-block {
+      position: relative;
+      background: #1e1e1e;
+      border-left: 4px solid #667eea;
+      padding: 16px 20px;
+      margin: 12px 0;
+      border-radius: 0 8px 8px 0;
+      font-family: 'Fira Code', 'Consolas', monospace;
+      font-size: 0.85em;
+      line-height: 1.6;
+      color: #d4d4d4;
+      white-space: pre-wrap;
+      word-break: break-all;
+      overflow: visible;
+    }
+    .code-block:hover {
+      box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
+    }
+
+    /* 流程图节点 */
+    .flow-node {
+      display: inline-block;
+      padding: 8px 16px;
+      margin: 4px;
+      background: linear-gradient(135deg, #667eea22, #764ba222);
+      border: 2px solid #667eea;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+      cursor: default;
+    }
+    .flow-node:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
+      background: linear-gradient(135deg, #667eea44, #764ba244);
+    }
+
+    /* 卡片点击展开 */
+    .file-detail {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.4s ease, padding 0.4s ease;
+      padding: 0 16px;
+    }
+    .file-card.expanded .file-detail {
+      max-height: 2000px;
+      padding: 20px;
+      border-top: 1px solid #e0e0e8;
+      margin-top: 12px;
+    }
+
+    /* 技术名词悬停解释 */
+    .tech-term {
+      position: relative;
+      border-bottom: 1px dotted #667eea;
+      cursor: help;
+      color: #667eea;
+      font-weight: 500;
+    }
+    .tech-term::before {
+      content: attr(data-tip);
+      position: absolute;
+      bottom: 120%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1a1a2e;
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.85em;
+      font-weight: normal;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      max-width: 280px;
+      min-width: 180px;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.2s ease;
+      z-index: 100;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    .tech-term:hover::before {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    /* 技术标签 */
+    .tech-tag {
+      display: inline-block;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.85em;
+      margin: 4px 4px 4px 0;
+    }
+
+    /* ========== 章节通用样式 ========== */
+    section {
+      background: white;
+      border-radius: 16px;
+      padding: 28px;
+      margin: 24px 0;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    h1 { font-size: 2.2em; color: #1a1a2e; }
+    h2 { font-size: 1.5em; color: #1a1a2e; margin-top: 0; }
+    h3 { font-size: 1.1em; color: #2d3436; margin-top: 0; }
+
+    /* 头部 */
+    .header {
+      text-align: center;
+      padding: 40px 20px;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: white;
+      border-radius: 16px;
+      margin-bottom: 24px;
+    }
+    .header h1 { color: white; }
+    .header .subtitle { font-size: 1.2em; opacity: 0.9; margin-top: 8px; }
+
+    /* 概览 */
+    .meta {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin: 16px 0;
+    }
+    .meta span {
+      background: #f0f0f5;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.9em;
+      color: #555;
+    }
+    .description {
+      font-size: 1.1em;
+      color: #444;
+      margin: 16px 0;
+      line-height: 1.8;
+    }
+    .github-link {
+      display: inline-block;
+      background: #24292e;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      text-decoration: none;
+      margin-top: 12px;
+      font-weight: 500;
+      transition: background 0.2s;
+    }
+    .github-link:hover { background: #3a3a3a; }
+
+    /* 生活比喻卡片 */
+    .analogy-card {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: white;
+      padding: 32px;
+      border-radius: 16px;
+      margin: 20px 0;
+    }
+    .big-text {
+      font-size: 1.5em;
+      font-weight: bold;
+      margin-bottom: 16px;
+      line-height: 1.4;
+    }
+    .analogy {
+      font-size: 1.1em;
+      opacity: 0.95;
+      line-height: 1.7;
+    }
+
+    /* 结构说明 */
+    .structure-explain {
+      margin-top: 16px;
+      padding: 16px;
+      background: #f8f8fa;
+      border-radius: 8px;
+      border-left: 4px solid #667eea;
+    }
+
+    /* 文件/模块卡片 */
+    .modules-grid, .file-grid, .feature-grid, .takeaway-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+    .module-card, .file-card, .feature-card, .takeaway-card {
+      background: linear-gradient(135deg, #f8f8fa 0%, #e8e8f0 100%);
+      border-radius: 12px;
+      padding: 20px;
+      border: 1px solid #e0e0e8;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .file-card h3, .feature-card h3 {
+      color: #667eea;
+      margin-top: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .file-summary, .feature-card p {
+      margin: 8px 0;
+      color: #555;
+    }
+    .file-detail {
+      border-top: 1px solid #e0e0e8;
+      margin-top: 12px;
+    }
+    .file-detail p { margin: 8px 0; }
+    .file-detail ul { margin: 8px 0 8px 20px; }
+
+    /* 流程图 */
+    .flow {
+      background: #1e1e1e;
+      color: #61afef;
+      padding: 20px 24px;
+      border-radius: 10px;
+      overflow-x: auto;
+      font-family: 'Fira Code', 'Consolas', monospace;
+      font-size: 0.9em;
+      line-height: 2;
+    }
+    .flow-diagram {
+      text-align: center;
+      padding: 20px;
+      background: #f8f8fa;
+      border-radius: 8px;
+      margin: 16px 0;
+    }
+    .flow-steps {
+      margin-top: 20px;
+    }
+    .flow-steps p {
+      padding: 12px 16px;
+      background: #f8f8fa;
+      border-radius: 8px;
+      margin: 10px 0;
+    }
+    .flow-steps strong { color: #667eea; }
+
+    /* 步骤 */
+    .step { margin: 24px 0; }
+    .step h3 { margin-bottom: 12px; }
+
+    /* 用户指南 */
+    .user-guide {
+      background: linear-gradient(135deg, #f8f8fa 0%, #f0f0f8 100%);
+      border-radius: 12px;
+      padding: 24px;
+      margin: 16px 0;
+    }
+    .user-guide h3 { color: #667eea; margin-top: 0; }
+
+    /* 高亮盒子 */
+    .highlight-box {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 24px;
+      border-radius: 12px;
+      margin: 20px 0;
+    }
+    .highlight-box h3 { color: white; margin-top: 0; }
+    .feature-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .feature-item {
+      background: rgba(255,255,255,0.15);
+      padding: 12px 16px;
+      border-radius: 8px;
+    }
+
+    /* 借鉴卡片 - 单列布局 */
+    .takeaway-grid {
+      display: grid !important;
+      grid-template-columns: 1fr !important;
+      gap: 16px;
+      margin-top: 20px;
+    }
+    .takeaway-card {
+      background: linear-gradient(135deg, #f8f8fa 0%, #e8e8f0 100%);
+      border-radius: 12px;
+      padding: 20px;
+      border: 1px solid #e0e0e8;
+      transition: all 0.3s ease;
+    }
+    .takeaway-card:hover {
+      box-shadow: 0 0 25px rgba(0, 184, 148, 0.3);
+      transform: translateY(-2px);
+    }
+    .takeaway-card h3 { color: #00b894; margin-top: 0; }
+    .takeaway-card p { margin: 8px 0; color: #555; }
+    .takeaway-card strong { color: #333; }
+
+    /* Prompt模版样式 */
+    .prompt-template {
+      background: #f0f4ff;
+      border-left: 3px solid #00b894;
+      color: #333;
+      font-size: 0.9em;
+      margin-top: 8px;
+      padding: 12px 16px;
+      border-radius: 0 6px 6px 0;
+    }
+
+    /* 响应式 */
+    @media (max-width: 600px) {
+      body { padding: 12px; }
+      section { padding: 20px; margin: 16px 0; }
+      h1 { font-size: 1.8em; }
+      .modules-grid, .file-grid, .feature-grid, .takeaway-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 头部 -->
+  <div class="header">
+    <h1>🎨 frontend-slides</h1>
+    <p class="subtitle">用"聊天"的方式做演示文稿，AI帮你搞定设计</p>
+  </div>
+
+  <!-- 章节1: 项目概览 -->
+  <section id="overview">
+    <h2>📋 项目概览</h2>
+    <div class="meta">
+      <span>⭐ 11.6k Stars</span>
+      <span>💻 Shell</span>
+      <span>🏷️ claude-code, skill</span>
+      <span>📅 持续维护</span>
+      <span>🔧 MIT协议</span>
+    </div>
+    <p class="description">
+      这是一个<strong>Claude Code的技能（skill）</strong>，专门帮不懂设计的人做出漂亮的网页版演示文稿。
+      它的核心理念是"用嘴做PPT"——你只需要描述你想要什么，它就会生成几种视觉风格让你选，选完直接给你一个可以发链接的网页幻灯片。
+    </p>
+    <p class="description">
+      最大的特点是<strong>零依赖</strong>——输出的就是一个HTML文件，没有npm包、没有框架、10年后还能打开。
+    </p>
+    <a href="https://github.com/zarazhangrui/frontend-slides" class="github-link">🔗 查看GitHub仓库</a>
+  </section>
+
+  <!-- 章节2: 生活比喻 -->
+  <section id="analogy">
+    <h2>🎯 一句话解释</h2>
+    <div class="analogy-card">
+      <p class="big-text">就像有个私人设计师朋友，你说什么他帮你做，而且做完还能直接发链接</p>
+      <p class="analogy">
+        想象你小时候玩乐高——包装盒里有各种形状的砖块，说明书告诉你A砖插B砖的凹槽里。
+        React就是网页版的"乐高说明书"：它把网页拆成一个个小零件，告诉你怎么把这些零件组装成完整的网页。
+        你不需要从零捏泥巴，而是用现成的积木搭房子。
+      </p>
+    </div>
+
+    <div class="highlight-box">
+      <h3>🎁 它能做什么</h3>
+      <div class="feature-list">
+        <div class="feature-item">✨ 从零创建演示文稿</div>
+        <div class="feature-item">📄 转换现有PPT文件</div>
+        <div class="feature-item">🎨 AI帮你选视觉风格</div>
+        <div class="feature-item">📱 手机电脑都能看</div>
+        <div class="feature-item">🔗 一键生成分享链接</div>
+        <div class="feature-item">📄 导出PDF备用</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 章节3: 整体结构 -->
+  <section id="structure">
+    <h2>📁 项目结构</h2>
+    <pre class="tree">
+frontend-slides/
+├── SKILL.md                # 技能入口（使用说明书）
+├── STYLE_PRESETS.md        # 12种视觉风格预设
+├── animation-patterns.md   # 动画效果参考
+├── html-template.md       # HTML模板和JS功能
+├── viewport-base.css       # 响应式CSS基础
+└── scripts/
+    ├── extract-pptx.py     # 从PPT提取内容
+    ├── deploy.sh           # 部署到Vercel
+    └── export-pdf.sh       # 导出PDF
+    </pre>
+    <div class="structure-explain">
+      <strong>设计理念：渐进式披露</strong><br>
+      这个项目没有把所有功能塞到一个大文件里，而是按需加载。
+      SKILL.md 是总览（~180行），告诉你整体流程；具体做的时候才会加载具体的参考文件。
+    </div>
+  </section>
+
+  <!-- 章节4: 核心文件深度解读 -->
+  <section id="file-analysis">
+    <h2>🔍 核心文件深度解读</h2>
+    <p style="color:#666; margin-bottom:16px;">点击卡片展开详细内容</p>
+
+    <div class="file-grid">
+      <div class="file-card" onclick="this.classList.toggle('expanded')">
+        <h3>📄 SKILL.md</h3>
+        <p class="file-summary">技能入口，定义整体工作流程</p>
+        <div class="file-detail">
+          <p><strong>🎯 作用：</strong>Claude Code技能的入口文件，定义了用户如何与这个技能交互</p>
+          <p><strong>🛠️ 技术实现：</strong></p>
+          <ul>
+            <li>使用<span class="tech-term" data-tip="YAML：一种人类可读的数据序列化格式，常用于配置文件">YAML</span>front matter定义skill元数据</li>
+            <li>采用<span class="tech-term" data-tip="渐进式披露：设计模式，主文件只做流程调度，参考文件按需加载">渐进式披露</span>模式，按需加载内容</li>
+            <li>定义了触发词和对话流程</li>
+          </ul>
+          <p><strong>📝 关键代码片段：</strong></p>
+          <pre class="code-block">---
+name: frontend-slides
+description: Create stunning HTML presentations...
+---
+
+Core Principles:
+1. Zero Dependencies — Single HTML files
+2. Show, Don't Tell — Visual previews
+3. Distinctive Design — No AI slop
+4. Viewport Fitting — 100vh per slide</pre>
+          <p><strong>🔗 依赖关系：</strong>调用 STYLE_PRESETS.md、html-template.md 等参考文件</p>
+        </div>
+      </div>
+
+      <div class="file-card" onclick="this.classList.toggle('expanded')">
+        <h3>📄 STYLE_PRESETS.md</h3>
+        <p class="file-summary">12种视觉风格的设计规范</p>
+        <div class="file-detail">
+          <p><strong>🎯 作用：</strong>定义每种视觉风格的<span class="tech-term" data-tip="CSS变量：CSS的自定义属性，在:root中定义，全站可复用，用于主题切换">CSS变量</span>、颜色、字体、布局规则</p>
+          <p><strong>🛠️ 技术实现：</strong></p>
+          <ul>
+            <li>使用<span class="tech-term" data-tip="CSS Custom Properties：即CSS变量，定义主题颜色、字体等可复用值">CSS Custom Properties</span>定义主题</li>
+            <li>每种风格都有深色/浅色两个版本</li>
+            <li>包含<span class="tech-term" data-tip="动画参数：控制动画速度、缓动函数等效果参数">动画参数</span>配置</li>
+          </ul>
+          <p><strong>📝 关键代码片段：</strong></p>
+          <pre class="code-block">/* Bold Signal 风格 */
+:root {
+    --bg-primary: #1a1a1a;
+    --card-bg: #FF5722;
+    --text-primary: #ffffff;
+}
+--font-display: 'Archivo Black';
+--font-body: 'Space Grotesk';</pre>
+          <p><strong>🔗 依赖关系：</strong>被 html-template.md 引用</p>
+        </div>
+      </div>
+
+      <div class="file-card" onclick="this.classList.toggle('expanded')">
+        <h3>📄 scripts/deploy.sh</h3>
+        <p class="file-summary">一键部署到Vercel</p>
+        <div class="file-detail">
+          <p><strong>🎯 作用：</strong>将生成的HTML幻灯片部署到Vercel，生成永久可访问的URL</p>
+          <p><strong>🛠️ 技术实现：</strong></p>
+          <ul>
+            <li>调用<span class="tech-term" data-tip="Vercel CLI：Vercel平台的命令行工具，用于部署静态网站">Vercel CLI</span>进行部署</li>
+            <li>支持指定目录或单个文件</li>
+            <li>自动检测用户登录状态</li>
+          </ul>
+          <p><strong>📝 关键代码片段：</strong></p>
+          <pre class="code-block"># 检查Vercel CLI
+if ! command -v vercel &> /dev/null; then
+    echo "安装Vercel CLI..."
+fi
+
+# 部署
+vercel --prod ./my-deck/
+# 生成类似 xxx.vercel.app 的URL</pre>
+          <p><strong>🔗 依赖关系：</strong>依赖 Vercel CLI 和用户账号</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 章节5: 功能实现详解 -->
+  <section id="implementation">
+    <h2>⚙️ 功能实现详解</h2>
+
+    <div class="feature-card">
+      <h3>✨ 从零创建演示文稿</h3>
+      <p><strong>💡 原理：</strong>用户描述需求 → AI理解内容 → AI生成风格选项 → 用户选择 → AI生成完整HTML</p>
+      <p><strong>🔄 代码流程：</strong></p>
+      <pre class="flow">
+用户输入需求 → [理解内容意图] → [生成3种风格预览] →
+[用户选择] → [根据风格生成HTML] → [浏览器打开]
+      </pre>
+      <p><strong>🔑 关键技术点：</strong></p>
+      <div class="tech-tags">
+        <span class="tech-tag">CSS变量主题</span>
+        <span class="tech-tag">渐进式披露</span>
+        <span class="tech-tag">Viewport Fitting</span>
+      </div>
+      <p><strong>📖 详细解释：</strong></p>
+      <p>AI首先理解用户想要什么样的演示（内容是什么、传达什么情绪），
+      然后生成3种不同风格的预览让用户选择，而不是问"你喜欢什么颜色"这种抽象问题。
+      用户选好后，AI根据选择的风格预设，生成完整的HTML文件。</p>
+    </div>
+
+    <div class="feature-card">
+      <h3>📄 PPT转换功能</h3>
+      <p><strong>💡 原理：</strong>用<span class="tech-term" data-tip="python-pptx：Python库，用于读取和修改PowerPoint文件">python-pptx库</span>提取PPT中的文字、图片 → AI理解内容结构 → 映射到网页幻灯片</p>
+      <p><strong>🔄 代码流程：</strong></p>
+      <pre class="flow">
+上传.pptx → [extract-pptx.py提取] → [AI分析内容结构] →
+[生成HTML版式] → [保留原版素材] → [选择风格]
+      </pre>
+      <p><strong>🔑 关键技术点：</strong></p>
+      <div class="tech-tags">
+        <span class="tech-tag">python-pptx库</span>
+        <span class="tech-tag">XML解析</span>
+        <span class="tech-tag">内容映射</span>
+      </div>
+      <p><strong>📖 详细解释：</strong></p>
+      <p>extract-pptx.py 是一个Python脚本，它解压PPT文件（.pptx就是zip包），
+      解析其中的XML结构，提取每张幻灯片的文字、图片、布局信息。
+      然后这些信息传给AI，AI再生成对应的网页版本。</p>
+    </div>
+  </section>
+
+  <!-- 章节6: 值得借鉴的能力 -->
+  <section id="takeaways">
+    <h2>💡 值得借鉴的能力</h2>
+
+    <div class="takeaway-grid">
+      <div class="takeaway-card">
+        <h3>🏗️ 渐进式披露架构</h3>
+        <p><strong>借鉴点：</strong>不一次性加载所有内容，而是根据用户当前步骤<span class="tech-term" data-tip="按需加载：只在需要时才读取相关文件，减少初始加载时间">按需加载</span></p>
+        <p><strong>适用场景：</strong>复杂的技能/工具，需要分步骤完成的任务</p>
+        <p><strong>实现方式：</strong>主文件只做流程调度，具体的参考文件在需要时才被读取</p>
+        <p><strong>💬 Prompt模版：</strong></p>
+        <pre class="code-block prompt-template">帮我设计一个技能系统，主要流程在主文件调度，具体功能在需要时加载。比如：用户说"/订机票"，就加载机票相关的参考文件。</pre>
+      </div>
+
+      <div class="takeaway-card">
+        <h3>🎨 视觉预览选择</h3>
+        <p><strong>借鉴点：</strong>不问抽象偏好，而是生成具体预览让用户选择</p>
+        <p><strong>适用场景：</strong>设计类工具、内容生成类工具</p>
+        <p><strong>实现方式：</strong>用AI生成3-5个具体的视觉方案，用户只需要"选一个"</p>
+        <p><strong>💬 Prompt模版：</strong></p>
+        <pre class="code-block prompt-template">帮我做一个PPT主题选择功能先生成3种不同风格的预览（带实际颜色和排版），用户选一个后再生成完整内容。</pre>
+      </div>
+
+      <div class="takeaway-card">
+        <h3>📦 零依赖单文件输出</h3>
+        <p><strong>借鉴点：</strong>生成的最终产物不依赖任何外部库</p>
+        <p><strong>适用场景：</strong>需要长期保存或分发的内容</p>
+        <p><strong>实现方式：</strong>所有CSS/JS<span class="tech-term" data-tip="内联：将CSS和JS直接写在HTML中，不使用外部文件">内联</span>，不使用CDN或外部资源</p>
+        <p><strong>💬 Prompt模版：</strong></p>
+        <pre class="code-block prompt-template">帮我生成一个独立的HTML文件，所有CSS和JS都内联在里面，不使用任何外部CDN或依赖库，确保10年后还能正常打开。</pre>
+      </div>
+
+      <div class="takeaway-card">
+        <h3>🔧 分离内容与样式</h3>
+        <p><strong>借鉴点：</strong>用<span class="tech-term" data-tip="CSS变量：CSS的自定义属性，在:root中定义，全站可复用，用于主题切换">CSS变量</span>实现"一套HTML，多套主题"</p>
+        <p><strong>适用场景：</strong>需要多套主题的Web应用</p>
+        <p><strong>实现方式：</strong>定义 --primary、--bg 等变量，不同风格预设只改变量值</p>
+        <p><strong>💬 Prompt模版：</strong></p>
+        <pre class="code-block prompt-template">帮我用CSS变量实现多主题切换功能，定义好 --primary、--background、--text 等变量，然后提供深色/浅色两套主题值。</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- 章节7: 数据流向 -->
+  <section id="interactions">
+    <h2>🔄 数据流向</h2>
+    <p>用户创建演示的整体流程：</p>
+
+    <div class="flow-diagram">
+      <span class="flow-node">用户描述需求</span> →
+      <span class="flow-node">AI理解内容</span> →
+      <span class="flow-node">生成风格预览</span> →
+      <span class="flow-node">用户选择</span> →
+      <span class="flow-node">生成HTML</span>
+    </div>
+
+    <div class="flow-steps">
+      <p><strong>步骤1：内容收集</strong> — AI问用户要放什么内容、传达什么情绪</p>
+      <p><strong>步骤2：风格生成</strong> — AI根据内容生成3种风格预览（带实际颜色和排版）</p>
+      <p><strong>步骤3：用户选择</strong> — 用户说"第二个"，不需要解释为什么</p>
+      <p><strong>步骤4：HTML生成</strong> — AI根据选择的风格，生成完整的单HTML文件</p>
+      <p><strong>步骤5：本地预览/发布</strong> — 浏览器打开，或一键部署到Vercel</p>
+    </div>
+  </section>
+
+  <!-- 章节8: 快速上手 -->
+  <section id="getting-started">
+    <h2>🚀 快速上手</h2>
+
+    <div class="step">
+      <h3>第一步：安装技能</h3>
+      <div class="code-block">git clone https://github.com/zarazhangrui/frontend-slides.git ~/.claude/skills/frontend-slides</div>
+    </div>
+
+    <div class="step">
+      <h3>第二步：使用</h3>
+      <div class="code-block">/frontend-slides</div>
+      <p style="margin-top:8px;">然后描述你想要什么：</p>
+      <div class="code-block">"帮我做一个产品发布会演示，要有科技感和未来感"</div>
+    </div>
+
+    <div class="step">
+      <h3>第三步：等待生成</h3>
+      <p>AI会生成风格预览让你选，选完就给你完整的HTML文件，浏览器自动打开</p>
+    </div>
+
+    <div class="step">
+      <h3>可选：发布分享</h3>
+      <div class="code-block">bash ~/.claude/skills/frontend-slides/scripts/deploy.sh ./my-deck/</div>
+    </div>
+  </section>
+
+  <!-- 章节9: 使用指南 -->
+  <section id="usage">
+    <h2>📖 使用指南</h2>
+
+    <div class="user-guide">
+      <h3>👤 普通用户</h3>
+      <p>
+        这是为你准备的！你只需要：
+        <br>1. <strong>想清楚要说什么</strong>——内容是你的，AI帮你包装
+        <br>2. <strong>选感觉</strong>——从AI给的几个预览里挑一个顺眼的
+        <br>3. <strong>说"第三个"</strong>——不需要解释为什么
+        <br><br>
+        <strong>什么时候用：</strong>工作汇报、课堂展示、创业路演、朋友圈分享
+      </p>
+    </div>
+
+    <div class="user-guide">
+      <h3>👨‍💻 设计师或开发者</h3>
+      <p>
+        如果你想更精细控制：
+        <br>1. <strong>直接改HTML</strong>——生成的代码有详细注释
+        <br>2. <strong>调整动画</strong>——看 animation-patterns.md
+        <br>3. <strong>自定义风格</strong>——参考 STYLE_PRESETS.md 格式
+        <br><br>
+        <strong>为什么值得参考：</strong>代码写得清晰，注释详细，是学习"怎么做设计工具"的好范例
+      </p>
+    </div>
+  </section>
+
+  <footer style="text-align: center; padding: 40px 20px; color: #888; font-size: 0.9em;">
+    <p>🤖 由 <a href="https://github.com/YvonneJY/github-explainer" style="color: #667eea;">github-explainer</a> skill 生成 | 理解代码，从这里开始</p>
+  </footer>
+
+</body>
+</html>
