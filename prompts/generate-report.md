@@ -48,6 +48,10 @@
   <script>
     /* 可选的交互JS */
   </script>
+
+  <footer style="text-align: center; padding: 40px 20px; color: #888; font-size: 0.9em;">
+    <p>🤖 由 <a href="https://github.com/YvonneJY/github-explainer" style="color: #667eea;">github-explainer</a> skill 生成 | 理解代码，从这里开始</p>
+  </footer>
 </body>
 </html>
 ```
